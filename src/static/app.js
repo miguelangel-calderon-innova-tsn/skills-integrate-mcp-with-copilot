@@ -3,15 +3,35 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const searchInput = document.getElementById("search");
+  const categorySelect = document.getElementById("category");
+  const sortSelect = document.getElementById("sort");
 
   // Function to fetch activities from API
   async function fetchActivities() {
     try {
-      const response = await fetch("/activities");
+      const params = new URLSearchParams({
+        search: searchInput.value,
+        category: categorySelect.value,
+        sort: sortSelect.value,
+      });
+      const response = await fetch(`/activities?${params}`);
       const activities = await response.json();
 
       // Clear loading message
       activitiesList.innerHTML = "";
+
+      if (categorySelect.options.length === 1) {
+        const categories = [...new Set(Object.values(activities).map((details) => details.category))].sort();
+        categories.forEach((category) => {
+          const option = document.createElement("option");
+          option.value = category;
+          option.textContent = category;
+          categorySelect.appendChild(option);
+        });
+      }
+
+      activitySelect.length = 1;
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -39,6 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         activityCard.innerHTML = `
           <h4>${name}</h4>
+          <p><strong>Category:</strong> ${details.category}</p>
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
@@ -154,6 +175,10 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error signing up:", error);
     }
   });
+
+  searchInput.addEventListener("input", fetchActivities);
+  categorySelect.addEventListener("change", fetchActivities);
+  sortSelect.addEventListener("change", fetchActivities);
 
   // Initialize app
   fetchActivities();
